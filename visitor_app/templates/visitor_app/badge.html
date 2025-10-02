@@ -1,0 +1,380 @@
+{% extends 'visitor_app/base.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="badge-container">
+        <h2>Visitor Badge</h2>
+        
+        <!-- Print Button -->
+        <div class="print-actions" style="margin-bottom: 1.5rem;">
+            <button onclick="printBadge()" class="btn btn-print">
+                🖨️ Print Badge
+            </button>
+            <a href="{% url 'checkin' %}" class="btn">Check In Another Visitor</a>
+            <a href="{% url 'home' %}" class="btn btn-secondary">Home</a>
+        </div>
+
+        <!-- Badge for Display -->
+        <div class="badge" id="visitorBadge">
+            <h3>{{ visitor.name }}</h3>
+            <p><strong>Company:</strong> {{ visitor.company|default:"N/A" }}</p>
+            <p><strong>Host:</strong> {{ visitor.host.name }}</p>
+            <p><strong>Badge ID:</strong> {{ visitor.badge_id }}</p>
+            <p><strong>Check-in:</strong> {{ visitor.check_in_time }}</p>
+            
+            <div class="qr-code">
+                <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code">
+            </div>
+            
+            <p class="badge-note">Please keep this badge visible during your visit</p>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Printable Badge -->
+<div id="printableBadge" style="display: none;">
+    <div class="print-badge">
+        <div class="print-header">
+            <h2>VISITOR BADGE</h2>
+        </div>
+        <div class="print-content">
+            <h3>{{ visitor.name }}</h3>
+            <div class="print-details">
+                <p><strong>Company:</strong> {{ visitor.company|default:"N/A" }}</p>
+                <p><strong>Host:</strong> {{ visitor.host.name }}</p>
+                <p><strong>Badge ID:</strong> {{ visitor.badge_id }}</p>
+                <p><strong>Check-in:</strong> {{ visitor.check_in_time|date:"M d, Y H:i" }}</p>
+            </div>
+            <div class="print-qr">
+                <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code">
+                <p class="qr-note">Scan for check-out</p>
+            </div>
+            <div class="print-footer">
+                <p>Please keep this badge visible during your visit</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+    margin: 0 auto;
+    max-width: 500px;
+    border: 1px solid #eaeaea;
+}
+
+.badge-container {
+    text-align: center;
+}
+
+.badge-container h2 {
+    margin-bottom: 1.2rem;
+    color: #333;
+    font-size: 1.5rem;
+}
+
+.badge {
+    border: 2px solid #333;
+    padding: 1.5rem;
+    border-radius: 8px;
+    background: white;
+    margin-bottom: 1.5rem;
+}
+
+.badge h3 {
+    margin-bottom: 1rem;
+    color: #333;
+    font-size: 1.3rem;
+}
+
+.badge p {
+    margin: 0.5rem 0;
+    color: #555;
+}
+
+.badge-note {
+    margin-top: 1rem !important;
+    font-style: italic;
+    color: #666 !important;
+}
+
+.qr-code {
+    margin: 1rem 0;
+}
+
+.qr-code img {
+    max-width: 180px;
+    height: auto;
+}
+
+.print-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: transform 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: #6c757d;
+}
+
+.btn-print {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+/* Printable Badge Styles */
+.print-badge {
+    width: 100mm;
+    height: 150mm;
+    border: 2px solid #000;
+    padding: 10mm;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: white;
+}
+
+.print-header {
+    background: #333;
+    color: white;
+    padding: 5mm;
+    margin: -10mm -10mm 5mm -10mm;
+}
+
+.print-header h2 {
+    margin: 0;
+    font-size: 16pt;
+}
+
+.print-content h3 {
+    font-size: 18pt;
+    margin: 5mm 0;
+    color: #333;
+}
+
+.print-details {
+    text-align: left;
+    margin: 5mm 0;
+    font-size: 11pt;
+}
+
+.print-details p {
+    margin: 2mm 0;
+}
+
+.print-qr {
+    margin: 5mm 0;
+}
+
+.print-qr img {
+    width: 50mm;
+    height: 50mm;
+}
+
+.qr-note {
+    font-size: 10pt;
+    margin: 2mm 0 0 0;
+    color: #666;
+}
+
+.print-footer {
+    margin-top: 5mm;
+    padding-top: 3mm;
+    border-top: 1px solid #ccc;
+    font-size: 10pt;
+    color: #666;
+}
+
+/* Print Styles */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    
+    #printableBadge,
+    #printableBadge * {
+        visibility: visible;
+    }
+    
+    #printableBadge {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        display: block !important;
+    }
+    
+    .print-badge {
+        width: 100mm;
+        height: 150mm;
+        margin: 0;
+        box-shadow: none;
+        border: 2px solid #000;
+    }
+    
+    /* Hide navigation and other elements */
+    .navbar, .print-actions, .card {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+function printBadge() {
+    // Create a print-friendly version
+    const printWindow = window.open('', '_blank');
+    const printableContent = document.getElementById('printableBadge').innerHTML;
+    
+    const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Print Visitor Badge - {{ visitor.name }}</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 20px;
+                    font-family: Arial, sans-serif;
+                    background: white;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                }
+                .print-badge {
+                    width: 100mm;
+                    height: 150mm;
+                    border: 3px solid #000;
+                    padding: 10mm;
+                    text-align: center;
+                    background: white;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                    margin: 0 auto;
+                }
+                .print-header {
+                    background: #333;
+                    color: white;
+                    padding: 5mm;
+                    margin: -10mm -10mm 5mm -10mm;
+                }
+                .print-header h2 {
+                    margin: 0;
+                    font-size: 16pt;
+                    font-weight: bold;
+                }
+                .print-content h3 {
+                    font-size: 18pt;
+                    margin: 5mm 0;
+                    color: #333;
+                    font-weight: bold;
+                }
+                .print-details {
+                    text-align: left;
+                    margin: 5mm 0;
+                    font-size: 11pt;
+                }
+                .print-details p {
+                    margin: 2mm 0;
+                    line-height: 1.4;
+                }
+                .print-details strong {
+                    color: #333;
+                }
+                .print-qr {
+                    margin: 5mm 0;
+                }
+                .print-qr img {
+                    width: 50mm;
+                    height: 50mm;
+                    border: 1px solid #ddd;
+                }
+                .qr-note {
+                    font-size: 10pt;
+                    margin: 2mm 0 0 0;
+                    color: #666;
+                }
+                .print-footer {
+                    margin-top: 5mm;
+                    padding-top: 3mm;
+                    border-top: 1px solid #ccc;
+                    font-size: 10pt;
+                    color: #666;
+                }
+                @media print {
+                    body {
+                        padding: 0;
+                        margin: 0;
+                    }
+                    .print-badge {
+                        box-shadow: none;
+                        margin: 0;
+                        border: 3px solid #000;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            ${printableContent}
+        </body>
+        </html>
+    `;
+    
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Wait for images to load before printing
+    printWindow.onload = function() {
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.onafterprint = function() {
+                printWindow.close();
+            };
+        }, 500);
+    };
+}
+
+// Alternative simple print function
+function simplePrint() {
+    window.print();
+}
+
+// Add keyboard shortcut (Ctrl+P)
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        printBadge();
+    }
+});
+</script>
+
+<!-- Simple print button alternative -->
+<div style="text-align: center; margin-top: 1rem;">
+    <button onclick="simplePrint()" class="btn" style="background: #17a2b8;">
+        🖨️ Quick Print
+    </button>
+    <small style="display: block; margin-top: 0.5rem; color: #666;">
+        Press Ctrl+P to print directly
+    </small>
+</div>
+
+{% endblock %}

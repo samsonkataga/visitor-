@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #667eea; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .badge { background: white; padding: 20px; margin: 20px 0; border: 2px solid #333; border-radius: 10px; text-align: center; }
+        .footer { padding: 20px; text-align: center; font-size: 0.9em; color: #666; }
+        .qr-code { margin: 15px 0; }
+        .info-item { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Your Visitor Badge</h1>
+        </div>
+        <div class="content">
+            <p>Hello <strong>{{ visitor_name }}</strong>,</p>
+            <p>Thank you for checking in. Here is your digital visitor badge:</p>
+            
+            <div class="badge">
+                <h2>VISITOR BADGE</h2>
+                <div class="info-item">
+                    <h3>{{ visitor_name }}</h3>
+                </div>
+                <div class="info-item">
+                    <strong>Company:</strong> {{ visitor_company|default:"N/A" }}
+                </div>
+                <div class="info-item">
+                    <strong>Host:</strong> {{ host_name }}
+                </div>
+                <div class="info-item">
+                    <strong>Badge ID:</strong> {{ badge_id }}
+                </div>
+                <div class="info-item">
+                    <strong>Check-in Time:</strong> {{ checkin_time }}
+                </div>
+                
+                <!-- <div class="qr-code">
+                    <img src="{{ qr_code_url }}" alt="QR Code" style="max-width: 200px;">
+                </div> -->
+                
+                <p><em>Please keep this badge visible during your visit</em></p>
+            </div>
+            
+            <p><strong>Check-out Instructions:</strong><br>
+            When leaving, please present your badge ID (<strong>{{ badge_id }}</strong>) at the reception or use the check-out system.</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated email from Visitor Management System</p>
+        </div>
+    </div>
+</body>
+</html>

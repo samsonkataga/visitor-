@@ -1,0 +1,128 @@
+{% extends 'visitor_app/base.html' %}
+
+{% block content %}
+<div class="card">
+    <h2>Visitor Reports</h2>
+    
+    <form method="get" class="filter-form">
+        <input type="date" name="date" value="{{ date_filter }}" class="form-control" style="width: auto;">
+        <button type="submit" class="btn">Filter</button>
+        {% if date_filter %}
+        <a href="{% url 'reports' %}" class="btn" style="background: #6c757d;">Clear Filter</a>
+        {% endif %}
+    </form>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Company</th>
+                <th>Host</th>
+                <th>Check-in Time</th>
+                <th>Check-out Time</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for visitor in visitors %}
+            <tr>
+                <td>{{ visitor.name }}</td>
+                <td>{{ visitor.company|default:"N/A" }}</td>
+                <td>{{ visitor.host.name }}</td>
+                <td>{{ visitor.check_in_time }}</td>
+                <td>{{ visitor.check_out_time|default:"Not checked out" }}</td>
+                <td>
+                    {% if visitor.is_checked_in %}
+                    <span style="color: green;">Checked In</span>
+                    {% else %}
+                    <span style="color: blue;">Checked Out</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center;">No visitors found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+    margin: 0 auto;
+    border: 1px solid #eaeaea;
+}
+
+.card h2 {
+    margin-bottom: 1.2rem;
+    color: #333;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.filter-form {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.form-control {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+.btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: transform 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.table th,
+.table td {
+    padding: 0.8rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+</style>
+{% endblock %}

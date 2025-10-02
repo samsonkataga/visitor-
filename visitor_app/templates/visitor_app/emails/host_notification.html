@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .footer { padding: 20px; text-align: center; font-size: 0.9em; color: #666; }
+        .visitor-info { background: white; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #667eea; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Visitor Notification</h1>
+        </div>
+        <div class="content">
+            <p>Hello <strong>{{ host_name }}</strong>,</p>
+            <p>You have a visitor waiting for you at the reception.</p>
+            
+            <div class="visitor-info">
+                <h3>Visitor Details:</h3>
+                <p><strong>Name:</strong> {{ visitor_name }}</p>
+                <p><strong>Company:</strong> {{ visitor_company|default:"Not specified" }}</p>
+                <p><strong>Email:</strong> {{ visitor_email|default:"Not specified" }}</p>
+                <p><strong>Phone:</strong> {{ visitor_phone }}</p>
+                <p><strong>Purpose:</strong> {{ visitor_purpose|default:"Not specified" }}</p>
+                <p><strong>Check-in Time:</strong> {{ checkin_time }}</p>
+                <p><strong>Badge ID:</strong> {{ badge_id }}</p>
+            </div>
+            
+            <p>Please proceed to the reception to meet your visitor.</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated notification from Visitor Management System</p>
+        </div>
+    </div>
+</body>
+</html>

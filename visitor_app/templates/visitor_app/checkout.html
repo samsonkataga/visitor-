@@ -1,0 +1,96 @@
+{% extends 'visitor_app/base.html' %}
+
+{% block content %}
+<div class="card">
+    <h2>Visitor Check-out</h2>
+    
+    {% if success %}
+    <div class="alert alert-success">
+        Successfully checked out {{ visitor.name }}. Check-out time: {{ visitor.check_out_time }}
+    </div>
+    {% endif %}
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>{{ form.badge_id.label }}</label>
+            {{ form.badge_id }}
+            {% if form.badge_id.errors %}
+            <div style="color: red; font-size: 0.9rem;">
+                {{ form.badge_id.errors }}
+            </div>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn">Check Out</button>
+    </form>
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+    margin: 0 auto;
+    max-width: 500px;
+    border: 1px solid #eaeaea;
+}
+
+.card h2 {
+    margin-bottom: 1.2rem;
+    color: #333;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.alert {
+    padding: 0.8rem 1rem;
+    border-radius: 5px;
+    margin-bottom: 1.2rem;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.form-group {
+    margin-bottom: 1.2rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+.btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    margin-top: 0.5rem;
+    transition: transform 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+</style>
+{% endblock %}
