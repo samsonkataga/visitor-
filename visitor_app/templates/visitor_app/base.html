@@ -415,10 +415,20 @@
                 Visitor Management
             </a>
             <ul class="nav-links">
-                <li><a href="{% url 'checkin' %}">Check In</a></li>
-                <li><a href="{% url 'checkout' %}">Check Out</a></li>
-                <li><a href="{% url 'reports' %}">Reports</a></li>
-                <li><a href="{% url 'employees' %}">Employees</a></li>
+                <li><a href="{% url 'checkin' %}">In</a></li>
+                <li><a href="{% url 'checkout' %}">Out</a></li>
+                <!-- <li><a href="{% url 'reports' %}">Reports</a></li> -->
+                <li><a href="{% url 'staff_checkin' %}">Staff In</a></li>
+                <li><a href="{% url 'staff_checkout' %}">Staff Out</a></li>
+                <!-- <li><a href="{% url 'staff_reports' %}">Staff Reports</a></li> -->
+
+                <!-- Show reports only to admin users -->
+            {% if user.is_authenticated and user.is_staff %}
+            <li><a href="{% url 'reports' %}">Reports</a></li>
+            <li><a href="{% url 'staff_reports' %}">Staff Reports</a></li>
+            
+            {% endif %}
+                
             </ul>
         </div>
     </nav>

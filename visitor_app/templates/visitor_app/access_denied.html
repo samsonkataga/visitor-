@@ -1,0 +1,82 @@
+{% extends 'visitor_app/base.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="access-denied">
+        <div class="access-icon">🚫</div>
+        <h1>Access Denied</h1>
+        <p class="message">{{ message }}</p>
+        <div class="actions">
+            {% if not user.is_authenticated %}
+            <a href="{% url 'admin:login' %}?next={{ request.path }}" class="btn btn-primary">
+                Login to Admin
+            </a>
+            {% endif %}
+            <a href="{% url 'home' %}" class="btn btn-secondary">Go Home</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    max-width: 500px;
+    margin: 2rem auto;
+    text-align: center;
+}
+
+.access-denied {
+    padding: 2rem;
+}
+
+.access-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.access-denied h1 {
+    color: #dc3545;
+    margin-bottom: 1rem;
+}
+
+.message {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+.actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+</style>
+{% endblock %}

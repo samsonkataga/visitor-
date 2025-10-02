@@ -1,0 +1,438 @@
+{% extends 'visitor_app/base.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="header-icon">👥</div>
+        <h1>Staff Check In</h1>
+        <p class="subtitle">Register your attendance for the day</p>
+    </div>
+    
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            <div class="alert-content">
+                <span class="alert-icon">
+                    {% if message.tags == 'success' %}✅
+                    {% elif message.tags == 'error' %}❌
+                    {% elif message.tags == 'warning' %}⚠️
+                    {% else %}ℹ️{% endif %}
+                </span>
+                <span class="alert-text">{{ message }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Check In Form -->
+    <div class="form-section">
+        <form method="post" class="staff-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.staff_id.id_for_label }}" class="form-label">
+                    <span class="label-icon">🆔</span>
+                    Staff Identification Number
+                </label>
+                <div class="input-container">
+                    {{ form.staff_id }}
+                    <span class="input-icon">👤</span>
+                </div>
+                {% if form.staff_id.errors %}
+                <div class="error-message">
+                    <span class="error-icon"></span>
+                    <span class="error-text">{{ form.staff_id.errors.0 }}</span>
+                </div>
+                {% endif %}
+                <div class="form-hint">
+                    Enter your unique staff ID to check in for the day
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-large">
+                    <span class="btn-icon"></span>
+                    Check In Now
+                </button>
+                
+                <div class="action-links">
+                    <a href="{% url 'staff_checkout' %}" class="btn btn-secondary">
+                        <span class="btn-icon"></span>
+                        Check Out
+                    </a>
+                    <!-- <a href="{% url 'staff_reports' %}" class="btn btn-outline">
+                        <span class="btn-icon"></span>
+                        View Reports
+                    </a> -->
+                    <!-- <a href="{% url 'staff_list' %}" class="btn btn-outline">
+                        <span class="btn-icon"></span>
+                        Staff Directory
+                    </a> -->
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    margin: 2rem auto;
+    max-width: 500px;
+    border: 1px solid #f0f0f0;
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.card-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.header-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.card-header h1 {
+    color: #2c3e50;
+    font-size: 2.25rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.subtitle {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Messages */
+.messages-container {
+    margin-bottom: 2rem;
+}
+
+.alert {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: 1rem;
+    border: 1px solid;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.alert-success {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #f8fff9 0%, #e8f5e9 100%);
+}
+
+.alert-error {
+    border-color: #dc3545;
+    background: linear-gradient(135deg, #fff8f8 0%, #ffeaea 100%);
+}
+
+.alert-warning {
+    border-color: #ffc107;
+    background: linear-gradient(135deg, #fffdf0 0%, #fff3cd 100%);
+}
+
+.alert-info {
+    border-color: #17a2b8;
+    background: linear-gradient(135deg, #f0fdff 0%, #e3f7fb 100%);
+}
+
+.alert-icon {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.alert-text {
+    flex: 1;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+/* Form Styles */
+.form-section {
+    margin-bottom: 1rem;
+}
+
+.staff-form {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 2.5rem;
+    border: 1px solid #e9ecef;
+}
+
+.form-group {
+    margin-bottom: 2rem;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.label-icon {
+    font-size: 1.2rem;
+}
+
+.input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-container .form-control {
+    width: 100%;
+    padding: 1.25rem 3.5rem 1.25rem 1.5rem;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.input-container .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15), 0 4px 16px rgba(102, 126, 234, 0.1);
+    transform: translateY(-2px);
+}
+
+.input-icon {
+    position: absolute;
+    right: 1.5rem;
+    font-size: 1.3rem;
+    color: #6c757d;
+    pointer-events: none;
+}
+
+.form-hint {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+}
+
+.error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: #fff5f5;
+    color: #dc3545;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid #fecaca;
+}
+
+.error-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.error-text {
+    flex: 1;
+}
+
+/* Buttons */
+.form-actions {
+    text-align: center;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.125rem 2.25rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    justify-content: center;
+    min-width: 140px;
+}
+
+.btn-large {
+    padding: 1.375rem 2.75rem;
+    font-size: 1.15rem;
+    min-width: 180px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+.btn-outline {
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.btn-outline:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.action-links {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.btn-icon {
+    font-size: 1.2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .card {
+        padding: 2rem 1.5rem;
+        margin: 1rem;
+        border-radius: 16px;
+    }
+    
+    .card-header h1 {
+        font-size: 2rem;
+    }
+    
+    .staff-form {
+        padding: 2rem 1.5rem;
+    }
+    
+    .action-links {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .action-links .btn {
+        width: 100%;
+        max-width: 280px;
+    }
+    
+    .input-container .form-control {
+        padding: 1.125rem 3rem 1.125rem 1.25rem;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 1.5rem 1rem;
+    }
+    
+    .staff-form {
+        padding: 1.5rem 1rem;
+    }
+    
+    .btn {
+        padding: 1rem 1.75rem;
+        font-size: 1rem;
+    }
+    
+    .btn-large {
+        padding: 1.125rem 2rem;
+    }
+    
+    .header-icon {
+        font-size: 2.5rem;
+    }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.alert {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input-container .form-control {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+</style>
+{% endblock %}

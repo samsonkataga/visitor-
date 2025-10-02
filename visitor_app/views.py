@@ -1,4 +1,5 @@
 import qrcode
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import io
 import base64
 from django.conf import settings 
@@ -9,10 +10,12 @@ from django.db.models import Q
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string  # Add this import
 from django.contrib import messages
-from .models import Visitor, Employee
+from .models import Visitor, Employee, Staff, StaffCheckInOut
 from .forms import VisitorCheckInForm, CheckOutForm
 from .utils import send_visitor_notification, generate_qr_code
 from datetime import datetime, date
+from .forms import VisitorCheckInForm, CheckOutForm, StaffRegistrationForm, StaffCheckInForm, StaffCheckOutForm
+from .decorators import admin_required
 
 def home(request):
     # Get current date
@@ -206,19 +209,34 @@ def badge(request, badge_id):
         'qr_code': qr_code
     })
 
+@admin_required
 def reports(request):
-    visitors = Visitor.objects.all().order_by('-check_in_time')
+    # Get all visitors in LIFO order (newest first)
+    visitors_list = Visitor.objects.all().order_by('-check_in_time')
     
-    # Filter by date
+    # Filter by date if provided
     date_filter = request.GET.get('date')
     if date_filter:
         try:
             filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
-            visitors = visitors.filter(
+            visitors_list = visitors_list.filter(
                 check_in_time__date=filter_date
             )
         except ValueError:
             pass
+    
+    # Pagination - 10 visitors per page
+    paginator = Paginator(visitors_list, 10)
+    page = request.GET.get('page')
+    
+    try:
+        visitors = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page
+        visitors = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver last page
+        visitors = paginator.page(paginator.num_pages)
     
     return render(request, 'visitor_app/reports.html', {
         'visitors': visitors,
@@ -228,6 +246,121 @@ def reports(request):
 def employees(request):
     employees_list = Employee.objects.filter(is_active=True)
     return render(request, 'visitor_app/employees.html', {'employees': employees_list})
+
+
+def staff_registration(request):
+    if request.method == 'POST':
+        form = StaffRegistrationForm(request.POST)
+        if form.is_valid():
+            staff = form.save()
+            messages.success(request, f'Staff member {staff.name} registered successfully!')
+            return redirect('staff_list')
+    else:
+        form = StaffRegistrationForm()
+    
+    return render(request, 'visitor_app/staff_registration.html', {'form': form})
+
+def staff_checkin(request):
+    if request.method == 'POST':
+        form = StaffCheckInForm(request.POST)
+        if form.is_valid():
+            staff_id = form.cleaned_data['staff_id']
+            try:
+                staff = Staff.objects.get(staff_id=staff_id, is_active=True)
+                
+                # Check if staff is already checked in
+                if StaffCheckInOut.objects.filter(staff=staff, is_checked_in=True).exists():
+                    messages.error(request, f'{staff.name} is already checked in!')
+                else:
+                    # Create new check-in record
+                    checkin_record = StaffCheckInOut.objects.create(staff=staff)
+                    messages.success(request, f'{staff.name} checked in successfully at {checkin_record.check_in_time.strftime("%H:%M")}')
+                    return redirect('staff_reports')
+                    
+            except Staff.DoesNotExist:
+                form.add_error('staff_id', 'Invalid staff ID or staff not found')
+    else:
+        form = StaffCheckInForm()
+    
+    return render(request, 'visitor_app/staff_checkin.html', {'form': form})
+
+def staff_checkout(request):
+    if request.method == 'POST':
+        form = StaffCheckOutForm(request.POST)
+        if form.is_valid():
+            staff_id = form.cleaned_data['staff_id']
+            try:
+                staff = Staff.objects.get(staff_id=staff_id, is_active=True)
+                
+                # Find active check-in record
+                try:
+                    checkin_record = StaffCheckInOut.objects.get(staff=staff, is_checked_in=True)
+                    checkin_record.check_out()
+                    duration = checkin_record.duration()
+                    hours, remainder = divmod(duration.total_seconds(), 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    
+                    messages.success(request, f'{staff.name} checked out successfully. Duration: {int(hours)}h {int(minutes)}m')
+                    return redirect('staff_reports')
+                    
+                except StaffCheckInOut.DoesNotExist:
+                    form.add_error('staff_id', f'{staff.name} is not currently checked in')
+                    
+            except Staff.DoesNotExist:
+                form.add_error('staff_id', 'Invalid staff ID or staff not found')
+    else:
+        form = StaffCheckOutForm()
+    
+    return render(request, 'visitor_app/staff_checkout.html', {'form': form})
+
+def staff_list(request):
+    staff_list = Staff.objects.filter(is_active=True).order_by('name')
+    return render(request, 'visitor_app/staff_list.html', {'staff_list': staff_list})
+
+
+@admin_required
+def staff_reports(request):
+    # Get all staff check-in/out records in LIFO order
+    staff_records_list = StaffCheckInOut.objects.all().order_by('-check_in_time')
+    
+    # Filter by date if provided
+    date_filter = request.GET.get('date')
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            staff_records_list = staff_records_list.filter(
+                check_in_time__date=filter_date
+            )
+        except ValueError:
+            pass
+    
+    # Filter by staff member if provided
+    staff_filter = request.GET.get('staff')
+    if staff_filter:
+        staff_records_list = staff_records_list.filter(staff__id=staff_filter)
+    
+    # Pagination - 10 records per page
+    paginator = Paginator(staff_records_list, 10)
+    page = request.GET.get('page')
+    
+    try:
+        staff_records = paginator.page(page)
+    except PageNotAnInteger:
+        staff_records = paginator.page(1)
+    except EmptyPage:
+        staff_records = paginator.page(paginator.num_pages)
+    
+    staff_members = Staff.objects.filter(is_active=True)
+    
+    return render(request, 'visitor_app/staff_reports.html', {
+        'staff_records': staff_records,
+        'date_filter': date_filter,
+        'staff_filter': staff_filter,
+        'staff_members': staff_members,
+    })
+
+
+
 
 
 # import qrcode

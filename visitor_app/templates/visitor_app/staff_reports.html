@@ -1,0 +1,558 @@
+{% extends 'visitor_app/base.html' %}
+
+{% block content %}
+<div class="card">
+    <h2>Staff Attendance Reports</h2>
+    
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <form method="get" class="filter-form">
+            <div class="filter-group">
+                <label for="date-filter">Filter by Date</label>
+                <input type="date" name="date" value="{{ date_filter }}" class="form-control" id="date-filter">
+            </div>
+            <div class="filter-group">
+                <label for="staff-filter">Filter by Staff</label>
+                <select name="staff" class="form-control" id="staff-filter">
+                    <option value="">All Staff</option>
+                    {% for staff in staff_members %}
+                    <option value="{{ staff.id }}" {% if staff_filter == staff.id|stringformat:"s" %}selected{% endif %}>
+                        {{ staff.name }} ({{ staff.staff_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">
+                    <span class="btn-icon">🔍</span>
+                    Apply Filters
+                </button>
+                {% if date_filter or staff_filter %}
+                <a href="{% url 'staff_reports' %}" class="btn btn-secondary">
+                    <span class="btn-icon">🔄</span>
+                    Clear Filters
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="results-summary">
+        <div class="summary-content">
+            <span class="summary-icon">📊</span>
+            <span class="summary-text">
+                Showing <strong>{{ staff_records.start_index }} - {{ staff_records.end_index }}</strong> 
+                of <strong>{{ staff_records.paginator.count }}</strong> records
+                {% if date_filter %}
+                for <strong>{{ date_filter }}</strong>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    
+    <!-- Table Section -->
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th class="staff-name">Staff Name</th>
+                    <th class="staff-id">Staff ID</th>
+                    <th class="department">Department</th>
+                    <th class="check-in">Check-in Time</th>
+                    <th class="check-out">Check-out Time</th>
+                    <th class="duration">Duration</th>
+                    <th class="status">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in staff_records %}
+                <tr class="{% if record.is_checked_in %}current-session{% endif %}">
+                    <td class="staff-name">
+                        <div class="staff-info">
+                            <strong>{{ record.staff.name }}</strong>
+                        </div>
+                    </td>
+                    <td class="staff-id">
+                        <code>{{ record.staff.staff_id }}</code>
+                    </td>
+                    <td class="department">
+                        <span class="dept-badge">{{ record.staff.department }}</span>
+                    </td>
+                    <td class="check-in">
+                        <div class="time-display">
+                            <div class="date">{{ record.check_in_time|date:"M d, Y" }}</div>
+                            <div class="time">{{ record.check_in_time|date:"H:i:s" }}</div>
+                        </div>
+                    </td>
+                    <td class="check-out">
+                        {% if record.check_out_time %}
+                        <div class="time-display">
+                            <div class="date">{{ record.check_out_time|date:"M d, Y" }}</div>
+                            <div class="time">{{ record.check_out_time|date:"H:i:s" }}</div>
+                        </div>
+                        {% else %}
+                        <span class="no-checkout">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="duration">
+                        {% if record.check_out_time %}
+                            {% with duration=record.duration %}
+                            {% widthratio duration.total_seconds 3600 1 as hours %}
+                            {% with remaining_seconds=duration.total_seconds|add:"0"|floatformat:0|divisibleby:3600 %}
+                            <div class="duration-display">
+                                <span class="duration-value">{{ duration.total_seconds|floatformat:0 }}</span>
+                                <span class="duration-unit">seconds</span>
+                            </div>
+                            {% endwith %}
+                            {% endwith %}
+                        {% else %}
+                        <div class="in-progress">
+                            <span class="pulse-dot"></span>
+                            In progress
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="status">
+                        {% if record.is_checked_in %}
+                        <span class="status-badge status-checked-in">
+                            <span class="status-dot"></span>
+                            Checked In
+                        </span>
+                        {% else %}
+                        <span class="status-badge status-checked-out">
+                            <span class="status-dot"></span>
+                            Checked Out
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="no-records">
+                        <div class="empty-state">
+                            <span class="empty-icon">📋</span>
+                            <h3>No staff records found</h3>
+                            <p>No attendance records match your current filters.</p>
+                            {% if date_filter or staff_filter %}
+                            <a href="{% url 'staff_reports' %}" class="btn btn-primary">Clear filters to see all records</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if staff_records.paginator.num_pages > 1 %}
+    <div class="pagination">
+        <div class="pagination-info">
+            Page {{ staff_records.number }} of {{ staff_records.paginator.num_pages }}
+        </div>
+        <div class="pagination-controls">
+            {% if staff_records.has_previous %}
+                <a href="?page=1{% if date_filter %}&date={{ date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-first">
+                    « First
+                </a>
+                <a href="?page={{ staff_records.previous_page_number }}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-prev">
+                    ‹ Previous
+                </a>
+            {% endif %}
+
+            <div class="pagination-pages">
+                {% for num in staff_records.paginator.page_range %}
+                    {% if num == staff_records.number %}
+                        <span class="pagination-current">{{ num }}</span>
+                    {% elif num > staff_records.number|add:"-3" and num < staff_records.number|add:"3" %}
+                        <a href="?page={{ num }}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn">
+                            {{ num }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if staff_records.has_next %}
+                <a href="?page={{ staff_records.next_page_number }}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-next">
+                    Next ›
+                </a>
+                <a href="?page={{ staff_records.paginator.num_pages }}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-last">
+                    Last »
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin: 0 auto;
+    border: 1px solid #eaeaea;
+}
+
+.card h2 {
+    margin-bottom: 1.5rem;
+    color: #2c3e50;
+    font-size: 1.75rem;
+    text-align: center;
+    font-weight: 700;
+}
+
+/* Filters Section */
+.filters-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e9ecef;
+}
+
+.filter-form {
+    display: flex;
+    gap: 1rem;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group label {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    color: #495057;
+    font-weight: 600;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-icon {
+    font-size: 1rem;
+}
+
+/* Results Summary */
+.results-summary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.summary-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.summary-icon {
+    font-size: 1.25rem;
+}
+
+.summary-text {
+    font-size: 0.95rem;
+}
+
+/* Table Styles */
+.table-container {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.table th {
+    background: #f8f9fa;
+    padding: 1rem;
+    font-weight: 700;
+    color: #495057;
+    text-align: left;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+.table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.table tbody tr.current-session {
+    background: #fff3cd;
+}
+
+/* Column Specific Styles */
+.staff-name {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.staff-id code {
+    background: #e9ecef;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #495057;
+}
+
+.dept-badge {
+    background: #e8f4fd;
+    color: #1976d2;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.time-display .date {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.time-display .time {
+    font-weight: 600;
+    color: #495057;
+}
+
+.no-checkout {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.duration-display {
+    text-align: center;
+}
+
+.duration-value {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.duration-unit {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.in-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #28a745;
+    font-weight: 600;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: #28a745;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-checked-in {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-checked-out {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-checked-in .status-dot {
+    background: #28a745;
+}
+
+.status-checked-out .status-dot {
+    background: #6c757d;
+}
+
+/* Empty State */
+.no-records {
+    text-align: center;
+    padding: 3rem !important;
+}
+
+.empty-state {
+    color: #6c757d;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.empty-state h3 {
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.empty-state p {
+    margin-bottom: 1.5rem;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.pagination-info {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.pagination-pages {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.pagination-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #495057;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.pagination-btn:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.pagination-current {
+    padding: 0.5rem 1rem;
+    background: #667eea;
+    color: white;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .card {
+        padding: 1rem;
+    }
+    
+    .filter-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        min-width: auto;
+    }
+    
+    .filter-actions {
+        justify-content: center;
+    }
+    
+    .pagination {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    .table {
+        min-width: 800px;
+    }
+}
+</style>
+{% endblock %}
