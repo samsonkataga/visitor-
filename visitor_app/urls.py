@@ -1,5 +1,10 @@
 from django.urls import path
 from . import views
+from .views import staff_reports_pdf
+
+
+    
+
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -14,4 +19,6 @@ urlpatterns = [
     path('staff/checkout/', views.staff_checkout, name='staff_checkout'),
     path('staff/list/', views.staff_list, name='staff_list'),
     path('staff/reports/', views.staff_reports, name='staff_reports'),
+
+    path('staff/reports/pdf/', staff_reports_pdf, name='staff_reports_pdf'),
 ]

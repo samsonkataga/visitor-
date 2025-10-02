@@ -48,12 +48,14 @@
             }
         }
         
+        /* Navigation Styles */
         .navbar {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             padding: 1rem 0;
             box-shadow: 0 2px 20px rgba(0,0,0,0.1);
             position: relative;
+            z-index: 1000;
         }
         
         .nav-container {
@@ -74,6 +76,7 @@
             align-items: center;
             gap: 10px;
             animation: slideInLeft 1s ease-out;
+            z-index: 1001;
         }
         
         .logo i {
@@ -104,6 +107,7 @@
             }
         }
         
+        /* Desktop Navigation */
         .nav-links {
             display: flex;
             list-style: none;
@@ -131,6 +135,7 @@
             position: relative;
             overflow: hidden;
             font-weight: 500;
+            white-space: nowrap;
         }
         
         .nav-links a::before {
@@ -154,10 +159,110 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         
+        /* Mobile Navigation */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 0.5rem;
+            background: none;
+            border: none;
+            z-index: 1001;
+        }
+        
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            margin: 3px 0;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+        
+        /* Mobile Menu - Improved for better visibility */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.98) 0%, rgba(118, 75, 162, 0.98) 100%);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 999;
+            animation: slideDown 0.3s ease-out;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .mobile-nav.active {
+            display: block;
+        }
+        
+        .mobile-nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .mobile-nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 1.2rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: block;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .mobile-nav-links a:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateX(8px);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* Hamburger Animation */
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+        
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+        
         .container {
             max-width: 1200px;
             margin: 2rem auto;
             padding: 0 20px;
+            transition: transform 0.3s ease;
+        }
+        
+        /* When menu is open, push content down */
+        body.menu-open .container {
+            transform: translateY(0);
         }
         
         .card {
@@ -194,14 +299,14 @@
         }
         
         .hero-section h1 {
-    font-size: 3.5rem;
-    margin-bottom: 1rem;
-    color: white;
-    animation: typewriter 2s steps(40) 1s 1 normal both;
-    overflow: hidden;
-    white-space: nowrap;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            color: white;
+            animation: typewriter 2s steps(40) 1s 1 normal both;
+            overflow: hidden;
+            white-space: nowrap;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
         
         @keyframes typewriter {
             from {
@@ -386,21 +491,131 @@
         /* Responsive Design */
         @media (max-width: 768px) {
             .nav-links {
-                flex-direction: column;
-                gap: 1rem;
+                display: none;
+            }
+            
+            .hamburger {
+                display: flex;
             }
             
             .hero-section h1 {
                 font-size: 2.5rem;
+                white-space: normal;
+                animation: none;
+                overflow: visible;
+            }
+            
+            .hero-section p {
+                font-size: 1.1rem;
             }
             
             .stats-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
             }
             
             .features-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
             }
+            
+            .card {
+                padding: 1.5rem;
+                margin: 1rem 0;
+            }
+            
+            .container {
+                padding: 0 15px;
+                margin: 1rem auto;
+            }
+            
+            .stat-card {
+                padding: 1.5rem;
+            }
+            
+            .stat-number {
+                font-size: 2.5rem;
+            }
+            
+            .feature-card {
+                padding: 1.5rem;
+            }
+            
+            .btn {
+                padding: 0.7rem 1.5rem;
+                font-size: 0.9rem;
+            }
+            
+            /* Mobile menu improvements */
+            .mobile-nav {
+                padding: 1.5rem;
+            }
+            
+            .mobile-nav-links a {
+                padding: 1rem 1.2rem;
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero-section h1 {
+                font-size: 2rem;
+            }
+            
+            .hero-section p {
+                font-size: 1rem;
+            }
+            
+            .card {
+                padding: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            .feature-card {
+                padding: 1rem;
+            }
+            
+            .logo {
+                font-size: 1.5rem;
+            }
+            
+            .mobile-nav {
+                padding: 1rem;
+            }
+            
+            .mobile-nav-links a {
+                padding: 0.9rem 1rem;
+                font-size: 0.95rem;
+            }
+        }
+        
+        /* Prevent body scroll when menu is open */
+        body.menu-open {
+            overflow: hidden;
+        }
+        
+        /* Overlay when menu is open */
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+        
+        body.menu-open .menu-overlay {
+            display: block;
         }
     </style>
 </head>
@@ -408,27 +623,51 @@
     <!-- Animated Background -->
     <div class="animated-bg" id="animatedBg"></div>
     
+    <!-- Menu Overlay -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    
     <nav class="navbar">
         <div class="nav-container">
             <a href="{% url 'home' %}" class="logo">
                 <i class="fas fa-user-friends"></i>
                 Visitor Management
             </a>
+            
+            <!-- Desktop Navigation -->
             <ul class="nav-links">
                 <li><a href="{% url 'checkin' %}">In</a></li>
                 <li><a href="{% url 'checkout' %}">Out</a></li>
-                <!-- <li><a href="{% url 'reports' %}">Reports</a></li> -->
                 <li><a href="{% url 'staff_checkin' %}">Staff In</a></li>
                 <li><a href="{% url 'staff_checkout' %}">Staff Out</a></li>
-                <!-- <li><a href="{% url 'staff_reports' %}">Staff Reports</a></li> -->
-
-                <!-- Show reports only to admin users -->
-            {% if user.is_authenticated and user.is_staff %}
-            <li><a href="{% url 'reports' %}">Reports</a></li>
-            <li><a href="{% url 'staff_reports' %}">Staff Reports</a></li>
-            
-            {% endif %}
                 
+                <!-- Show reports only to admin users -->
+                {% if user.is_authenticated and user.is_staff %}
+                <li><a href="{% url 'reports' %}">Reports</a></li>
+                <li><a href="{% url 'staff_reports' %}">Staff Reports</a></li>
+                {% endif %}
+            </ul>
+            
+            <!-- Mobile Hamburger Menu -->
+            <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-nav" id="mobileNav">
+            <ul class="mobile-nav-links">
+                <li><a href="{% url 'checkin' %}">In</a></li>
+                <li><a href="{% url 'checkout' %}">Out</a></li>
+                <li><a href="{% url 'staff_checkin' %}">Staff In</a></li>
+                <li><a href="{% url 'staff_checkout' %}">Staff Out</a></li>
+                
+                <!-- Show reports only to admin users -->
+                {% if user.is_authenticated and user.is_staff %}
+                <li><a href="{% url 'reports' %}">Visitor Reports</a></li>
+                <li><a href="{% url 'staff_reports' %}">Staff Reports</a></li>
+                {% endif %}
             </ul>
         </div>
     </nav>
@@ -536,6 +775,65 @@
             }
         }
         
+        // Mobile menu functionality
+        function initMobileMenu() {
+            const hamburger = document.getElementById('hamburger');
+            const mobileNav = document.getElementById('mobileNav');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const body = document.body;
+            
+            hamburger.addEventListener('click', function() {
+                this.classList.toggle('active');
+                mobileNav.classList.toggle('active');
+                body.classList.toggle('menu-open');
+                
+                // Update aria-expanded attribute
+                const isExpanded = this.classList.contains('active');
+                this.setAttribute('aria-expanded', isExpanded);
+            });
+            
+            // Close menu when clicking on overlay
+            menuOverlay.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                mobileNav.classList.remove('active');
+                body.classList.remove('menu-open');
+                hamburger.setAttribute('aria-expanded', 'false');
+            });
+            
+            // Close menu when clicking on links
+            const mobileLinks = mobileNav.querySelectorAll('a');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    hamburger.classList.remove('active');
+                    mobileNav.classList.remove('active');
+                    body.classList.remove('menu-open');
+                    hamburger.setAttribute('aria-expanded', 'false');
+                });
+            });
+            
+            // Close menu when clicking outside (for backup)
+            document.addEventListener('click', function(event) {
+                const isClickInsideNav = mobileNav.contains(event.target) || hamburger.contains(event.target);
+                
+                if (!isClickInsideNav && mobileNav.classList.contains('active')) {
+                    hamburger.classList.remove('active');
+                    mobileNav.classList.remove('active');
+                    body.classList.remove('menu-open');
+                    hamburger.setAttribute('aria-expanded', 'false');
+                }
+            });
+            
+            // Close menu on window resize (if resizing to desktop)
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    hamburger.classList.remove('active');
+                    mobileNav.classList.remove('active');
+                    body.classList.remove('menu-open');
+                    hamburger.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+        
         // Animate statistics counting
         function animateStats() {
             const counters = document.querySelectorAll('.stat-number');
@@ -543,7 +841,7 @@
             
             counters.forEach(counter => {
                 const target = parseInt(counter.innerText);
-                const count = 0;
+                let count = 0;
                 const increment = target / speed;
                 
                 const updateCount = () => {
@@ -563,6 +861,7 @@
         // Initialize when page loads
         window.addEventListener('DOMContentLoaded', () => {
             createParticles();
+            initMobileMenu();
             setTimeout(animateStats, 1000); // Delay animation for better effect
         });
     </script>

@@ -319,48 +319,37 @@ def staff_list(request):
 
 
 @admin_required
+# In your views.py
 def staff_reports(request):
-    # Get all staff check-in/out records in LIFO order
-    staff_records_list = StaffCheckInOut.objects.all().order_by('-check_in_time')
+    staff_records = StaffCheckInOut.objects.all().order_by('-check_in_time')
     
-    # Filter by date if provided
-    date_filter = request.GET.get('date')
-    if date_filter:
-        try:
-            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
-            staff_records_list = staff_records_list.filter(
-                check_in_time__date=filter_date
-            )
-        except ValueError:
-            pass
+    # Handle date range filters
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    staff_id = request.GET.get('staff')
     
-    # Filter by staff member if provided
-    staff_filter = request.GET.get('staff')
-    if staff_filter:
-        staff_records_list = staff_records_list.filter(staff__id=staff_filter)
+    if start_date:
+        staff_records = staff_records.filter(check_in_time__date__gte=start_date)
     
-    # Pagination - 10 records per page
-    paginator = Paginator(staff_records_list, 10)
+    if end_date:
+        staff_records = staff_records.filter(check_in_time__date__lte=end_date)
+    
+    if staff_id:
+        staff_records = staff_records.filter(staff_id=staff_id)
+    
+    # Pagination and context
+    paginator = Paginator(staff_records, 50)
     page = request.GET.get('page')
     
-    try:
-        staff_records = paginator.page(page)
-    except PageNotAnInteger:
-        staff_records = paginator.page(1)
-    except EmptyPage:
-        staff_records = paginator.page(paginator.num_pages)
+    context = {
+        'staff_records': paginator.get_page(page),
+        'start_date_filter': start_date,
+        'end_date_filter': end_date,
+        'staff_filter': staff_id,
+        'staff_members': Staff.objects.all(),
+    }
     
-    staff_members = Staff.objects.filter(is_active=True)
-    
-    return render(request, 'visitor_app/staff_reports.html', {
-        'staff_records': staff_records,
-        'date_filter': date_filter,
-        'staff_filter': staff_filter,
-        'staff_members': staff_members,
-    })
-
-
-
+    return render(request, 'visitor_app/staff_reports.html', context)
 
 
 # import qrcode
@@ -453,3 +442,106 @@ def staff_reports(request):
 # def employees(request):
 #     employees_list = Employee.objects.filter(is_active=True)
 #     return render(request, 'visitor_app/employees.html', {'employees': employees_list})
+
+
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from io import BytesIO
+from datetime import datetime
+
+def staff_reports_pdf(request):
+    # Get filter parameters
+    report_type = request.GET.get('type', 'all')
+    date_filter = request.GET.get('date')
+    staff_filter = request.GET.get('staff')
+    
+    # Create the HttpResponse object with PDF headers
+    response = HttpResponse(content_type='application/pdf')
+    filename = f'staff_attendance_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Create PDF buffer
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter))
+    
+    # Create container for PDF elements
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Add title
+    title = Paragraph("Staff Attendance Report", styles['Title'])
+    elements.append(title)
+    
+    # Add report info
+    info_text = f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    if date_filter:
+        info_text += f" | Date: {date_filter}"
+    if staff_filter:
+        staff = Staff.objects.get(id=staff_filter)
+        info_text += f" | Staff: {staff.name}"
+    
+    info = Paragraph(info_text, styles['Normal'])
+    elements.append(info)
+    elements.append(Paragraph("<br/>", styles['Normal']))
+    
+    # Get data based on filters
+    staff_records = StaffCheckInOut.objects.all().order_by('-check_in_time')
+    
+    if date_filter:
+        filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+        staff_records = staff_records.filter(check_in_time__date=filter_date)
+    
+    if staff_filter and report_type != 'all':
+        staff_records = staff_records.filter(staff__id=staff_filter)
+    
+    # Create table data
+    data = [['Staff Name', 'Staff ID', 'Department', 'Check-in Time', 'Check-out Time', 'Duration', 'Status']]
+    
+    for record in staff_records:
+        duration = "In Progress"
+        if record.check_out_time:
+            total_seconds = (record.check_out_time - record.check_in_time).total_seconds()
+            duration = f"{total_seconds:.0f} seconds"
+        
+        status = "Checked In" if record.is_checked_in else "Checked Out"
+        
+        data.append([
+            record.staff.name,
+            record.staff.staff_id,
+            record.staff.department,
+            record.check_in_time.strftime("%Y-%m-%d %H:%M:%S"),
+            record.check_out_time.strftime("%Y-%m-%d %H:%M:%S") if record.check_out_time else "—",
+            duration,
+            status
+        ])
+    
+    # Create table
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    elements.append(table)
+    
+    # Build PDF
+    doc.build(elements)
+    
+    # Get PDF value from buffer
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    response.write(pdf)
+    return response

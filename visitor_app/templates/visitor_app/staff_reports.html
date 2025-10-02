@@ -2,14 +2,28 @@
 
 {% block content %}
 <div class="card">
-    <h2>Staff Attendance Reports</h2>
+    <div class="header-actions">
+        <h2>Staff Attendance Reports</h2>
+        <div class="export-actions">
+            <button type="button" class="btn btn-success" onclick="generatePDF('all')">
+                <i class="fas fa-file-pdf"></i> Export All to PDF
+            </button>
+            <button type="button" class="btn btn-info" onclick="generatePDF('filtered')">
+                <i class="fas fa-filter"></i> Export Filtered to PDF
+            </button>
+        </div>
+    </div>
     
     <!-- Filters Section -->
     <div class="filters-section">
-        <form method="get" class="filter-form">
+        <form method="get" class="filter-form" id="filterForm">
             <div class="filter-group">
-                <label for="date-filter">Filter by Date</label>
-                <input type="date" name="date" value="{{ date_filter }}" class="form-control" id="date-filter">
+                <label for="start-date">From Date</label>
+                <input type="date" name="start_date" value="{{ start_date_filter }}" class="form-control" id="start-date">
+            </div>
+            <div class="filter-group">
+                <label for="end-date">To Date</label>
+                <input type="date" name="end_date" value="{{ end_date_filter }}" class="form-control" id="end-date">
             </div>
             <div class="filter-group">
                 <label for="staff-filter">Filter by Staff</label>
@@ -24,13 +38,11 @@
             </div>
             <div class="filter-actions">
                 <button type="submit" class="btn btn-primary">
-                    <span class="btn-icon">🔍</span>
-                    Apply Filters
+                    <i class="fas fa-search"></i> Apply Filters
                 </button>
-                {% if date_filter or staff_filter %}
+                {% if start_date_filter or end_date_filter or staff_filter %}
                 <a href="{% url 'staff_reports' %}" class="btn btn-secondary">
-                    <span class="btn-icon">🔄</span>
-                    Clear Filters
+                    <i class="fas fa-times"></i> Clear Filters
                 </a>
                 {% endif %}
             </div>
@@ -40,19 +52,24 @@
     <!-- Results Summary -->
     <div class="results-summary">
         <div class="summary-content">
-            <span class="summary-icon">📊</span>
+            <i class="fas fa-chart-bar summary-icon"></i>
             <span class="summary-text">
                 Showing <strong>{{ staff_records.start_index }} - {{ staff_records.end_index }}</strong> 
                 of <strong>{{ staff_records.paginator.count }}</strong> records
-                {% if date_filter %}
-                for <strong>{{ date_filter }}</strong>
+                {% if start_date_filter or end_date_filter %}
+                for period: 
+                <strong>
+                    {% if start_date_filter %}{{ start_date_filter }}{% else %}Start{% endif %}
+                    to 
+                    {% if end_date_filter %}{{ end_date_filter }}{% else %}End{% endif %}
+                </strong>
                 {% endif %}
             </span>
         </div>
     </div>
     
     <!-- Table Section -->
-    <div class="table-container">
+    <div class="table-container" id="reportTable">
         <table class="table">
             <thead>
                 <tr>
@@ -98,13 +115,10 @@
                     <td class="duration">
                         {% if record.check_out_time %}
                             {% with duration=record.duration %}
-                            {% widthratio duration.total_seconds 3600 1 as hours %}
-                            {% with remaining_seconds=duration.total_seconds|add:"0"|floatformat:0|divisibleby:3600 %}
                             <div class="duration-display">
                                 <span class="duration-value">{{ duration.total_seconds|floatformat:0 }}</span>
                                 <span class="duration-unit">seconds</span>
                             </div>
-                            {% endwith %}
                             {% endwith %}
                         {% else %}
                         <div class="in-progress">
@@ -131,10 +145,10 @@
                 <tr>
                     <td colspan="7" class="no-records">
                         <div class="empty-state">
-                            <span class="empty-icon">📋</span>
+                            <i class="fas fa-clipboard-list empty-icon"></i>
                             <h3>No staff records found</h3>
                             <p>No attendance records match your current filters.</p>
-                            {% if date_filter or staff_filter %}
+                            {% if start_date_filter or end_date_filter or staff_filter %}
                             <a href="{% url 'staff_reports' %}" class="btn btn-primary">Clear filters to see all records</a>
                             {% endif %}
                         </div>
@@ -153,10 +167,10 @@
         </div>
         <div class="pagination-controls">
             {% if staff_records.has_previous %}
-                <a href="?page=1{% if date_filter %}&date={{ date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-first">
+                <a href="?page=1{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-first">
                     « First
                 </a>
-                <a href="?page={{ staff_records.previous_page_number }}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-prev">
+                <a href="?page={{ staff_records.previous_page_number }}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-prev">
                     ‹ Previous
                 </a>
             {% endif %}
@@ -166,7 +180,7 @@
                     {% if num == staff_records.number %}
                         <span class="pagination-current">{{ num }}</span>
                     {% elif num > staff_records.number|add:"-3" and num < staff_records.number|add:"3" %}
-                        <a href="?page={{ num }}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn">
+                        <a href="?page={{ num }}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn">
                             {{ num }}
                         </a>
                     {% endif %}
@@ -174,10 +188,10 @@
             </div>
 
             {% if staff_records.has_next %}
-                <a href="?page={{ staff_records.next_page_number }}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-next">
+                <a href="?page={{ staff_records.next_page_number }}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-next">
                     Next ›
                 </a>
-                <a href="?page={{ staff_records.paginator.num_pages }}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-last">
+                <a href="?page={{ staff_records.paginator.num_pages }}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}{% if staff_filter %}&staff={{ staff_filter }}{% endif %}" class="pagination-btn pagination-last">
                     Last »
                 </a>
             {% endif %}
@@ -185,6 +199,17 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Loading Modal -->
+<div id="loadingModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Generating PDF...</p>
+        </div>
+    </div>
+</div>
+
 
 <style>
 .card {
@@ -196,12 +221,41 @@
     border: 1px solid #eaeaea;
 }
 
-.card h2 {
+.header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header-actions h2 {
     color: #2c3e50;
     font-size: 1.75rem;
-    text-align: center;
     font-weight: 700;
+    margin: 0;
+}
+
+.export-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+    color: white;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: white;
 }
 
 /* Filters Section */
@@ -267,10 +321,6 @@
 .btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.btn-icon {
-    font-size: 1rem;
 }
 
 /* Results Summary */
@@ -522,10 +572,59 @@
     font-weight: 600;
 }
 
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.loading-spinner i {
+    font-size: 2rem;
+    color: #667eea;
+}
+
+.loading-spinner p {
+    margin: 0;
+    color: #495057;
+    font-weight: 600;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .card {
         padding: 1rem;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .export-actions {
+        justify-content: center;
     }
     
     .filter-form {
@@ -554,5 +653,187 @@
         min-width: 800px;
     }
 }
+
+/* Add some responsive improvements for the new date filters */
+@media (max-width: 768px) {
+    .filter-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        min-width: auto;
+    }
+}
+
+/* PDF specific styles */
+.pdf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+}
+
+.pdf-table th {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 6px;
+    font-weight: bold;
+}
+
+.pdf-table td {
+    border: 1px solid #dee2e6;
+    padding: 6px;
+}
 </style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+function generatePDF(type) {
+    const loadingModal = document.getElementById('loadingModal');
+    loadingModal.style.display = 'flex';
+    
+    // Get current filter values
+    const startDateFilter = document.getElementById('start-date').value;
+    const endDateFilter = document.getElementById('end-date').value;
+    const staffFilter = document.getElementById('staff-filter').value;
+    
+    // Create a simplified version of the table for PDF
+    const originalTable = document.getElementById('reportTable');
+    const table = originalTable.cloneNode(true);
+    
+    // Remove interactive elements and unnecessary styling
+    const elementsToRemove = table.querySelectorAll('button, .btn, .pagination, .filter-form, .pulse-dot, .status-dot, .empty-state');
+    elementsToRemove.forEach(el => el.remove());
+    
+    // Simplify table styling for PDF
+    table.querySelectorAll('td, th').forEach(cell => {
+        cell.style.border = '1px solid #ddd';
+        cell.style.padding = '4px';
+        cell.style.fontSize = '10px';
+    });
+    
+    // Add title and timestamp
+    const title = document.createElement('div');
+    title.style.marginBottom = '15px';
+    title.style.textAlign = 'center';
+    title.style.borderBottom = '2px solid #667eea';
+    title.style.paddingBottom = '8px';
+    
+    let titleText = 'Staff Attendance Report';
+    if (type === 'filtered') {
+        if (startDateFilter || endDateFilter) {
+            titleText += ` - Period: ${startDateFilter || 'Start'} to ${endDateFilter || 'End'}`;
+        }
+        if (staffFilter) {
+            const staffSelect = document.getElementById('staff-filter');
+            const selectedStaff = staffSelect.options[staffSelect.selectedIndex].text;
+            titleText += ` - Staff: ${selectedStaff}`;
+        }
+    }
+    
+    title.innerHTML = `
+        <h2 style="color: #2c3e50; margin: 0 0 5px 0; font-size: 16px;">${titleText}</h2>
+        <p style="color: #6c757d; margin: 0; font-size: 12px;">Generated on: ${new Date().toLocaleString()}</p>
+        <p style="color: #6c757d; margin: 0; font-size: 12px;">Total Records: {{ staff_records.paginator.count }}</p>
+    `;
+    
+    const container = document.createElement('div');
+    container.style.padding = '10px';
+    container.style.fontSize = '12px';
+    container.appendChild(title);
+    container.appendChild(table);
+    
+    // Optimized PDF options for faster generation
+    const options = {
+        margin: [5, 5, 5, 5],
+        filename: `staff_attendance_${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.7 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true,
+            logging: false,
+            removeContainer: true
+        },
+        jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'landscape',
+            compress: true
+        }
+    };
+    
+    // Generate PDF with timeout to ensure modal shows
+    setTimeout(() => {
+        html2pdf()
+            .from(container)
+            .set(options)
+            .save()
+            .then(() => {
+                loadingModal.style.display = 'none';
+            })
+            .catch(error => {
+                console.error('PDF generation failed:', error);
+                alert('Failed to generate PDF. Please try again.');
+                loadingModal.style.display = 'none';
+            });
+    }, 500);
+}
+
+// Alternative server-side PDF generation (recommended for large datasets)
+function generatePDFServer(type) {
+    const loadingModal = document.getElementById('loadingModal');
+    loadingModal.style.display = 'flex';
+    
+    const startDateFilter = document.getElementById('start-date').value;
+    const endDateFilter = document.getElementById('end-date').value;
+    const staffFilter = document.getElementById('staff-filter').value;
+    
+    let url = `/staff/reports/pdf/?type=${type}`;
+    if (startDateFilter) url += `&start_date=${startDateFilter}`;
+    if (endDateFilter) url += `&end_date=${endDateFilter}`;
+    if (staffFilter) url += `&staff=${staffFilter}`;
+    
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `staff_attendance_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            loadingModal.style.display = 'none';
+        })
+        .catch(error => {
+            console.error('PDF generation failed:', error);
+            alert('Failed to generate PDF. Please try again.');
+            loadingModal.style.display = 'none';
+        });
+}
+
+// Date validation
+document.addEventListener('DOMContentLoaded', function() {
+    const startDate = document.getElementById('start-date');
+    const endDate = document.getElementById('end-date');
+    
+    if (startDate && endDate) {
+        startDate.addEventListener('change', function() {
+            if (this.value && endDate.value && this.value > endDate.value) {
+                endDate.value = this.value;
+            }
+        });
+        
+        endDate.addEventListener('change', function() {
+            if (this.value && startDate.value && this.value < startDate.value) {
+                startDate.value = this.value;
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
